@@ -22,35 +22,57 @@ A bit about this module
 <!-- BEGINNING OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 ## Requirements
 
-| Name                                                                      | Version   |
-|---------------------------------------------------------------------------|-----------|
-| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.13.5 |
+| Name | Version |
+|------|---------|
+| <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 0.14.8 |
+| <a name="requirement_aws"></a> [aws](#requirement\_aws) | ~> 3.36 |
 
 ## Providers
 
-No providers.
+| Name | Version |
+|------|---------|
+| <a name="provider_aws"></a> [aws](#provider\_aws) | ~> 3.36 |
 
 ## Modules
 
-| Name                                             | Source                      | Version  |
-|--------------------------------------------------|-----------------------------|----------|
+| Name | Source | Version |
+|------|--------|---------|
+| <a name="module_asg_tags"></a> [asg\_tags](#module\_asg\_tags) | rhythmictech/asg-tag-transform/aws | 1.0.0 |
 | <a name="module_tags"></a> [tags](#module\_tags) | rhythmictech/tags/terraform | ~> 1.1.0 |
 
 ## Resources
 
-No resources.
+| Name | Type |
+|------|------|
+| [aws_autoscaling_group.this](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/autoscaling_group) | resource |
 
 ## Inputs
 
-| Name                                           | Description                                     | Type          | Default | Required |
-|------------------------------------------------|-------------------------------------------------|---------------|---------|:--------:|
-| <a name="input_name"></a> [name](#input\_name) | Moniker to apply to all resources in the module | `string`      | n/a     |   yes    |
-| <a name="input_tags"></a> [tags](#input\_tags) | User-Defined tags                               | `map(string)` | `{}`    |    no    |
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_desired_capacity"></a> [desired\_capacity](#input\_desired\_capacity) | The number of Amazon EC2 instances that should be running in the group. | `number` | n/a | yes |
+| <a name="input_max_size"></a> [max\_size](#input\_max\_size) | The maximum size of the Auto Scaling Group | `number` | n/a | yes |
+| <a name="input_min_size"></a> [min\_size](#input\_min\_size) | The minimum size of the Auto Scaling Group | `number` | n/a | yes |
+| <a name="input_name"></a> [name](#input\_name) | Moniker to apply to all resources in the module | `string` | n/a | yes |
+| <a name="input_vpc_zone_identifier"></a> [vpc\_zone\_identifier](#input\_vpc\_zone\_identifier) | A list of subnet IDs to launch resources in. Subnets automatically determine which availability zones the group will reside. | `list(string)` | n/a | yes |
+| <a name="input_health_check_grace_period"></a> [health\_check\_grace\_period](#input\_health\_check\_grace\_period) | Time in sconds after instance comes into service before checking health | `number` | `300` | no |
+| <a name="input_health_check_type"></a> [health\_check\_type](#input\_health\_check\_type) | (Optional) `EC2` or `ELB`. Controls how health checking is done. | `string` | `"ELB"` | no |
+| <a name="input_instance_refresh"></a> [instance\_refresh](#input\_instance\_refresh) | (Optional) If this block is configured, start an Instance Refresh when this Auto Scaling Group is updated. This resource does not wait for the instance refresh to complete. | <pre>object({<br>    strategy = string<br>    triggers = optional(set(string))<br><br>    preferences = optional(object({<br>      instance_warmup        = optional(number)<br>      min_healthy_percentage = optional(number)<br>    }))<br>  })</pre> | <pre>{<br>  "strategy": "Rolling"<br>}</pre> | no |
+| <a name="input_launch_configuration"></a> [launch\_configuration](#input\_launch\_configuration) | (Optional) The name of the launch configuration to use. (`launch_template` is preferred) | `string` | `null` | no |
+| <a name="input_launch_template"></a> [launch\_template](#input\_launch\_template) | (Optional) Nested argument with Launch template specification to use to launch instances. | `map(string)` | `null` | no |
+| <a name="input_max_instance_lifetime"></a> [max\_instance\_lifetime](#input\_max\_instance\_lifetime) | (Optional) The maximum amount of time, in seconds, that an instance can be in service, values must be either equal to 0 or between 604800 and 31536000 seconds. | `number` | `null` | no |
+| <a name="input_mixed_instances_policy"></a> [mixed\_instances\_policy](#input\_mixed\_instances\_policy) | Object defining how to mix on-demand and spot instances of different types | <pre>object({<br>    instances_distribution = optional(object({<br>      on_demand_allocation_strategy            = optional(string)<br>      on_demand_base_capacity                  = optional(number)<br>      on_demand_percentage_above_base_capacity = optional(number)<br>      spot_allocation_strategy                 = optional(string)<br>      spot_instance_pools                      = optional(number)<br>      spot_max_price                           = optional(string)<br>    }))<br><br>    launch_template = object({<br>      launch_template_specification = object({<br>        launch_template_id   = optional(string)<br>        launch_template_name = optional(string)<br>        version              = optional(string)<br>      })<br><br>      override = list(object({<br>        instance_type     = optional(string)<br>        weighted_capacity = optional(number)<br><br>        launch_template_specification = optional(object({<br>          launch_template_id   = optional(string)<br>          launch_template_name = optional(string)<br>          version              = optional(string)<br>        }))<br>      }))<br>    })<br>  })</pre> | `null` | no |
+| <a name="input_scaling_cooldown"></a> [scaling\_cooldown](#input\_scaling\_cooldown) | (Optional) The amount of time, in seconds, after a scaling activity completes before another scaling activity can start. | `number` | `null` | no |
+| <a name="input_service_linked_role_arn"></a> [service\_linked\_role\_arn](#input\_service\_linked\_role\_arn) | The ARN of the service-linked role that the ASG will use to call other AWS services | `string` | `null` | no |
+| <a name="input_suspended_processes"></a> [suspended\_processes](#input\_suspended\_processes) | A list of processes to suspend for the ASG. The allowed values are `Launch`, `Terminate`, `HealthCheck`, `ReplaceUnhealthy`, `AZRebalance`, `AlarmNotification`, `ScheduledActions`, `AddToLoadBalancer` | `list(string)` | `[]` | no |
+| <a name="input_tags"></a> [tags](#input\_tags) | User-Defined tags | `map(string)` | `{}` | no |
+| <a name="input_target_group_arns"></a> [target\_group\_arns](#input\_target\_group\_arns) | A set of aws\_alb\_target\_group ARNs, for use with Application or Network Load Balancing. | `set(string)` | `null` | no |
+| <a name="input_wait_for_capacity_timeout"></a> [wait\_for\_capacity\_timeout](#input\_wait\_for\_capacity\_timeout) | (Default: `10m`) A maximum duration that Terraform should wait for ASG instances to be healthy before timing out. Setting this to `0` causes Terraform to skip all Capacity Waiting behavior. | `string` | `"10m"` | no |
 
 ## Outputs
 
-| Name                                                                    | Description                  |
-|-------------------------------------------------------------------------|------------------------------|
+| Name | Description |
+|------|-------------|
 | <a name="output_tags_module"></a> [tags\_module](#output\_tags\_module) | Tags Module in it's entirety |
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
 
