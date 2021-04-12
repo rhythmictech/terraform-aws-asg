@@ -5,6 +5,20 @@ variable "name" {
 }
 
 ################################
+# Network
+################################
+
+variable "vpc_id" {
+  description = "ID of VPC to use"
+  type        = string
+}
+
+variable "vpc_zone_identifier" {
+  description = "A list of subnet IDs to launch resources in. Subnets automatically determine which availability zones the group will reside."
+  type        = list(string)
+}
+
+################################
 # Capacity and Scaling
 ################################
 variable "scaling_cooldown" {
@@ -32,16 +46,48 @@ variable "min_size" {
 # Instance Definition
 ################################
 
-variable "launch_configuration" {
+variable "additional_security_group_ids" {
+  default     = []
+  description = "A list of Security Group IDs to add in addition to the default. (Default only allows access to SSM)"
+  type        = list(string)
+}
+
+variable "block_device_mappings" {
+  default     = []
+  description = "A list of objects describing any additional EBS volumes to mount to the instances"
+  type = set(object({
+    delete_on_termination = optional(bool)
+    encrypted             = optional(bool)
+    iops                  = optional(number)
+    kms_key_id            = optional(string)
+    snapshot_id           = optional(string)
+    throughput            = optional(number)
+    volume_size           = number
+    volume_type           = optional(string)
+  }))
+}
+
+variable "additional_iam_instance_profile_arns" {
+  default     = []
+  description = "A set of IAM instance profile ARNs to add to the instances in adition to the default. Default allows SSM"
+  type        = set(string)
+}
+
+variable "launch_template_description" {
   default     = null
-  description = "(Optional) The name of the launch configuration to use. (`launch_template` is preferred)"
+  description = "A description to attach to the launch template"
   type        = string
 }
 
-variable "launch_template" {
-  default     = null
-  description = "(Optional) Nested argument with Launch template specification to use to launch instances."
-  type        = map(string)
+variable "detailed_monitoring_enabled" {
+  default     = false
+  description = "Whether to enable detailed monitoring on instances"
+  type        = bool
+}
+
+variable "instance_type" {
+  description = "What instance type to use by default"
+  type        = string
 }
 
 ################################
@@ -122,11 +168,6 @@ variable "tags" {
   type        = map(string)
 }
 
-variable "vpc_zone_identifier" {
-  description = "A list of subnet IDs to launch resources in. Subnets automatically determine which availability zones the group will reside."
-  type        = list(string)
-}
-
 ################################
 # Mixed Instances
 ################################
@@ -145,23 +186,9 @@ variable "mixed_instances_policy" {
       spot_max_price                           = optional(string)
     }))
 
-    launch_template = object({
-      launch_template_specification = object({
-        launch_template_id   = optional(string)
-        launch_template_name = optional(string)
-        version              = optional(string)
-      })
-
-      override = list(object({
-        instance_type     = optional(string)
-        weighted_capacity = optional(number)
-
-        launch_template_specification = optional(object({
-          launch_template_id   = optional(string)
-          launch_template_name = optional(string)
-          version              = optional(string)
-        }))
-      }))
-    })
+    override = list(object({
+      instance_type     = optional(string)
+      weighted_capacity = optional(number)
+    }))
   })
 }
