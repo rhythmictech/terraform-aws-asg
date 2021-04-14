@@ -56,7 +56,7 @@ data "aws_iam_policy_document" "assume" {
 }
 
 resource "aws_iam_role" "this" {
-  name_prefix = local.name
+  name_prefix = substr(local.name, 0, 32)
   description = "Allows SSM access"
 
   assume_role_policy  = data.aws_iam_policy_document.assume.json
