@@ -17,10 +17,10 @@ module "asg_tags" {
 locals {
   name = module.tags.name
   tags = module.tags.tags
-  security_group_ids = [
-    aws_security_group.this.id,
+  security_group_ids = concat(
+    [aws_security_group.this.id],
     var.additional_security_group_ids
-  ]
+  )
 }
 
 resource "aws_security_group" "this" {
@@ -75,7 +75,6 @@ resource "aws_launch_template" "this" {
   description = coalesce(var.launch_template_description, local.name)
 
   update_default_version = true
-  block_device_mappings  = var.block_device_mappings
   ebs_optimized          = true
   image_id               = var.ami_id
   instance_type          = var.instance_type
@@ -144,18 +143,30 @@ resource "aws_autoscaling_group" "this" {
   max_size         = var.max_size
   min_size         = var.min_size
 
-  # Instance Definition
-  launch_template = aws_launch_template.this.id
-
   # Load Balancers
   target_group_arns = var.target_group_arns
 
   # Health
   health_check_grace_period = var.health_check_grace_period
   health_check_type         = var.health_check_type
-  instance_refresh          = var.instance_refresh
   max_instance_lifetime     = var.max_instance_lifetime
   wait_for_capacity_timeout = var.wait_for_capacity_timeout
+
+  dynamic "instance_refresh" {
+    for_each = [var.instance_refresh]
+    content {
+      strategy = instance_refresh.value.strategy
+      triggers = instance_refresh.value.triggers
+
+      dynamic "preferences" {
+        for_each = [instance_refresh.value.preferences]
+        content {
+          instance_warmup        = preferences.value.instance_warmup
+          min_healthy_percentage = preferences.value.min_healthy_percentage
+        }
+      }
+    }
+  }
 
   # ASG Config
   service_linked_role_arn = var.service_linked_role_arn
@@ -163,34 +174,41 @@ resource "aws_autoscaling_group" "this" {
   tags                    = module.asg_tags.tag_list
   vpc_zone_identifier     = var.vpc_zone_identifier
 
+  # Instance Definition
+  dynamic "launch_template" {
+    for_each = var.mixed_instances_policy == null ? [1] : []
+    content {
+      id = aws_launch_template.this.id
+    }
+  }
+
   # Mixed Instances
-  capacity_rebalance     = var.mixed_instances_policy != null
-  mixed_instances_policy = var.mixed_instances_policy
+  capacity_rebalance = var.mixed_instances_policy != null
 
   dynamic "mixed_instances_policy" {
     for_each = toset([var.mixed_instances_policy])
     content {
       dynamic "instances_distribution" {
-        for_each = toset([each.value.instances_distribution])
+        for_each = toset([mixed_instances_policy.value.instances_distribution])
         content {
-          on_demand_allocation_strategy            = each.value.on_demand_allocation_strategy
-          on_demand_base_capacity                  = each.value.on_demand_base_capacity
-          on_demand_percentage_above_base_capacity = each.value.on_demand_percentage_above_base_capacity
-          spot_allocation_strategy                 = each.value.spot_allocation_strategy
-          spot_instance_pools                      = each.value.spot_instance_pools
-          spot_max_price                           = each.value.spot_max_price
+          on_demand_allocation_strategy            = instances_distribution.value.on_demand_allocation_strategy
+          on_demand_base_capacity                  = instances_distribution.value.on_demand_base_capacity
+          on_demand_percentage_above_base_capacity = instances_distribution.value.on_demand_percentage_above_base_capacity
+          spot_allocation_strategy                 = instances_distribution.value.spot_allocation_strategy
+          spot_instance_pools                      = instances_distribution.value.spot_instance_pools
+          spot_max_price                           = instances_distribution.value.spot_max_price
         }
       }
       launch_template {
         launch_template_specification {
           launch_template_id = aws_launch_template.this.id
         }
-      }
-      dynamic "override" {
-        for_each = each.value.override
-        content {
-          instance_type     = each.value.instance_type
-          weighted_capacity = each.value.weighted_capacity
+        dynamic "override" {
+          for_each = mixed_instances_policy.value.override
+          content {
+            instance_type     = override.value.instance_type
+            weighted_capacity = override.value.weighted_capacity
+          }
         }
       }
     }
