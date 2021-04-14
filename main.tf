@@ -56,7 +56,7 @@ data "aws_iam_policy_document" "assume" {
 }
 
 resource "aws_iam_role" "this" {
-  name_prefix = local.name
+  name_prefix = substr(local.name, 0, 32)
   description = "Allows SSM access"
 
   assume_role_policy  = data.aws_iam_policy_document.assume.json
@@ -129,7 +129,7 @@ resource "aws_launch_template" "this" {
   }
 
   tag_specifications {
-    resource_type = "spot-instance-request"
+    resource_type = "spot-instances-request"
     tags          = local.tags
   }
 }
@@ -153,13 +153,13 @@ resource "aws_autoscaling_group" "this" {
   wait_for_capacity_timeout = var.wait_for_capacity_timeout
 
   dynamic "instance_refresh" {
-    for_each = [var.instance_refresh]
+    for_each = var.instance_refresh == null ? [] : [var.instance_refresh]
     content {
       strategy = instance_refresh.value.strategy
       triggers = instance_refresh.value.triggers
 
       dynamic "preferences" {
-        for_each = [instance_refresh.value.preferences]
+        for_each = instance_refresh.value.preferences == null ? [] : [instance_refresh.value.preferences]
         content {
           instance_warmup        = preferences.value.instance_warmup
           min_healthy_percentage = preferences.value.min_healthy_percentage
@@ -186,10 +186,10 @@ resource "aws_autoscaling_group" "this" {
   capacity_rebalance = var.mixed_instances_policy != null
 
   dynamic "mixed_instances_policy" {
-    for_each = toset([var.mixed_instances_policy])
+    for_each = var.mixed_instances_policy == null ? [] : [var.mixed_instances_policy]
     content {
       dynamic "instances_distribution" {
-        for_each = toset([mixed_instances_policy.value.instances_distribution])
+        for_each = mixed_instances_policy.value.instances_distribution == null ? [] : [mixed_instances_policy.value.instances_distribution]
         content {
           on_demand_allocation_strategy            = instances_distribution.value.on_demand_allocation_strategy
           on_demand_base_capacity                  = instances_distribution.value.on_demand_base_capacity
