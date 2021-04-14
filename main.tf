@@ -129,7 +129,7 @@ resource "aws_launch_template" "this" {
   }
 
   tag_specifications {
-    resource_type = "spot-instance-request"
+    resource_type = "spot-instances-request"
     tags          = local.tags
   }
 }
