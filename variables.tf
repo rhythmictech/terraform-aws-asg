@@ -52,6 +52,17 @@ variable "additional_security_group_ids" {
   type        = list(string)
 }
 
+variable "ami_id" {
+  description = "ID of the AMI to use in the launch template"
+  type        = string
+}
+
+variable "additional_iam_instance_profile_arns" {
+  default     = []
+  description = "A set of IAM instance profile ARNs to add to the instances in adition to the default. Default allows SSM"
+  type        = set(string)
+}
+
 variable "block_device_mappings" {
   default     = []
   description = "A list of objects describing any additional EBS volumes to mount to the instances"
@@ -67,18 +78,6 @@ variable "block_device_mappings" {
   }))
 }
 
-variable "additional_iam_instance_profile_arns" {
-  default     = []
-  description = "A set of IAM instance profile ARNs to add to the instances in adition to the default. Default allows SSM"
-  type        = set(string)
-}
-
-variable "launch_template_description" {
-  default     = null
-  description = "A description to attach to the launch template"
-  type        = string
-}
-
 variable "detailed_monitoring_enabled" {
   default     = false
   description = "Whether to enable detailed monitoring on instances"
@@ -87,6 +86,24 @@ variable "detailed_monitoring_enabled" {
 
 variable "instance_type" {
   description = "What instance type to use by default"
+  type        = string
+}
+
+variable "key_name" {
+  default     = null
+  description = "The name of the SSH key to use in the launch template"
+  type        = string
+}
+
+variable "launch_template_description" {
+  default     = null
+  description = "A description to attach to the launch template"
+  type        = string
+}
+
+variable "user_data" {
+  default     = null
+  description = "The Base64-encoded user data to provide when launching the instance."
   type        = string
 }
 
