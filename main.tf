@@ -127,11 +127,6 @@ resource "aws_launch_template" "this" {
     resource_type = "volume"
     tags          = local.tags
   }
-
-  tag_specifications {
-    resource_type = "spot-instances-request"
-    tags          = local.tags
-  }
 }
 
 resource "aws_autoscaling_group" "this" {
