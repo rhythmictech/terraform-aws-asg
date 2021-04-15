@@ -173,7 +173,8 @@ resource "aws_autoscaling_group" "this" {
   dynamic "launch_template" {
     for_each = var.mixed_instances_policy == null ? [1] : []
     content {
-      id = aws_launch_template.this.id
+      id      = aws_launch_template.this.id
+      version = aws_launch_teimplate.this.latest_version
     }
   }
 
@@ -197,6 +198,7 @@ resource "aws_autoscaling_group" "this" {
       launch_template {
         launch_template_specification {
           launch_template_id = aws_launch_template.this.id
+          version            = aws_launch_template.this.latest_version
         }
         dynamic "override" {
           for_each = mixed_instances_policy.value.override
