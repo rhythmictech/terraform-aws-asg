@@ -31,12 +31,12 @@ resource "aws_security_group" "this" {
   tags   = local.tags
 
   egress {
-    description      = "Allow all outbound 443"
+    description      = "Allow all outbound"
     cidr_blocks      = ["0.0.0.0/0"] # tfsec:ignore:AWS009
     ipv6_cidr_blocks = ["::/0"]      # tfsec:ignore:AWS009
-    from_port        = 443
-    to_port          = 443
-    protocol         = "tcp"
+    from_port        = 0
+    to_port          = 0
+    protocol         = "-1"
   }
 
   lifecycle {
