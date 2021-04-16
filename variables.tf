@@ -57,10 +57,10 @@ variable "ami_id" {
   type        = string
 }
 
-variable "additional_iam_instance_profile_arns" {
+variable "additional_iam_policy_arns" {
   default     = []
-  description = "A set of IAM instance profile ARNs to add to the instances in adition to the default. Default allows SSM"
-  type        = set(string)
+  description = "A list of IAM managed policy ARNs to add to the instances in adition to the default. Default allows SSM"
+  type        = list(string)
 }
 
 variable "block_device_mappings" {

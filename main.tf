@@ -59,9 +59,12 @@ resource "aws_iam_role" "this" {
   name_prefix = substr(local.name, 0, 32)
   description = "Allows SSM access"
 
-  assume_role_policy  = data.aws_iam_policy_document.assume.json
-  managed_policy_arns = ["arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"]
-  tags                = local.tags
+  assume_role_policy = data.aws_iam_policy_document.assume.json
+  managed_policy_arns = concat(
+    ["arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"],
+    var.additional_iam_policy_arns
+  )
+  tags = local.tags
 }
 
 resource "aws_iam_instance_profile" "this" {
@@ -104,14 +107,6 @@ resource "aws_launch_template" "this" {
 
   iam_instance_profile {
     arn = aws_iam_instance_profile.this.arn
-  }
-
-  dynamic "iam_instance_profile" {
-    for_each = var.additional_iam_instance_profile_arns
-
-    content {
-      arn = iam_instance_profile.value
-    }
   }
 
   monitoring {
