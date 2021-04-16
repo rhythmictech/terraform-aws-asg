@@ -110,7 +110,7 @@ resource "aws_launch_template" "this" {
     for_each = var.additional_iam_instance_profile_arns
 
     content {
-      arn = each.value
+      arn = iam_instance_profile.value
     }
   }
 
