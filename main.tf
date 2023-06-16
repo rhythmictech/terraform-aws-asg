@@ -7,13 +7,6 @@ module "tags" {
   tags         = var.tags
 }
 
-module "asg_tags" {
-  source  = "rhythmictech/asg-tag-transform/aws"
-  version = "1.0.0"
-  tag_map = local.tags
-}
-
-
 locals {
   name = module.tags.name
   tags = module.tags.tags
@@ -161,8 +154,16 @@ resource "aws_autoscaling_group" "this" {
   # ASG Config
   service_linked_role_arn = var.service_linked_role_arn
   suspended_processes     = var.suspended_processes
-  tags                    = module.asg_tags.tag_list
   vpc_zone_identifier     = var.vpc_zone_identifier
+
+  dynamic "tag" {
+    for_each = local.tags
+    content {
+      key                 = tag.key
+      value               = tag.value
+      propagate_at_launch = true
+    }
+  }
 
   # Instance Definition
   dynamic "launch_template" {
